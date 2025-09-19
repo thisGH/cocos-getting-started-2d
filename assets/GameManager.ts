@@ -49,9 +49,27 @@ export class GameManager extends Component {
     }
     return null;
   }
+
+  setGameState(state: GameState) {
+    switch (state) {
+      case GameState.INIT:
+        break;
+      case GameState.PLAYING:
+        break;
+      case GameState.END:
+        break;
+    }
+  }
+  init() {}
 }
 
 enum BlockType {
   NONE,
   STONE,
+}
+
+enum GameState {
+  INIT,
+  PLAYING,
+  END,
 }
