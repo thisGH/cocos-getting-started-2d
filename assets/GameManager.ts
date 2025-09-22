@@ -1,4 +1,5 @@
-import { _decorator, Component, instantiate, Node, Prefab } from "cc";
+import { _decorator, Component, instantiate, Label, Node, Prefab } from "cc";
+import { PlayerController } from "./PlayerController";
 const { ccclass, property } = _decorator;
 
 @ccclass("GameManager")
@@ -6,11 +7,21 @@ export class GameManager extends Component {
   @property({ type: Prefab })
   boxPrefab: Prefab | null = null;
 
+  @property({ type: Node })
+  StartMenu: Node | null = null;
+
+  @property({ type: PlayerController })
+  PlayerController: PlayerController | null = null;
+
+  @property({ type: Label })
+  StepsLabel: Label | null = null;
+
   _step = 40;
   _roadLength = 10;
   _road: BlockType[] = [];
   start() {
-    this.generateRoad();
+    this.PlayerController.node.on("jumpEnd", this.onPlayerJumpEnd, this);
+    this.setGameState(GameState.INIT);
   }
 
   update(deltaTime: number) {}
@@ -53,14 +64,42 @@ export class GameManager extends Component {
   setGameState(state: GameState) {
     switch (state) {
       case GameState.INIT:
+        this.init();
         break;
       case GameState.PLAYING:
+        this.playing();
         break;
       case GameState.END:
+        this.end();
         break;
     }
   }
-  init() {}
+  init() {
+    this.StartMenu.active = true;
+    this.PlayerController.setMouseActive(false);
+    this.generateRoad();
+    this.PlayerController.reset();
+  }
+  playing() {
+    setTimeout(() => {
+      this.PlayerController.setMouseActive(true);
+    });
+  }
+  end() {
+    this.setGameState(GameState.INIT);
+  }
+
+  onPlayButtonClick() {
+    this.StartMenu.active = false;
+    this.setGameState(GameState.PLAYING);
+  }
+
+  onPlayerJumpEnd(step: number) {
+    this.StepsLabel.string = `${step}`;
+    if (this._road[step] === BlockType.NONE) {
+      this.setGameState(GameState.END);
+    }
+  }
 }
 
 enum BlockType {

@@ -6,6 +6,7 @@ import {
   Input,
   input,
   Node,
+  Vec2,
   Vec3,
 } from "cc";
 const { ccclass, property } = _decorator;
@@ -22,9 +23,21 @@ export class PlayerController extends Component {
   _curJumpTime = 0;
   _endPos = new Vec3();
 
-  start() {
-    input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
-    console.log(this.BodyAnim.getState("twoStep"));
+  _totalStep = 0;
+
+  reset() {
+    this._endPos.set(0, 0, 0);
+    this._totalStep = 0;
+  }
+
+  start() {}
+
+  setMouseActive(active: boolean) {
+    if (active) {
+      input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+    } else {
+      input.off(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+    }
   }
 
   update(deltaTime: number) {
@@ -33,6 +46,7 @@ export class PlayerController extends Component {
     if (this._curJumpTime > this._jumpTime) {
       this._isJumping = false;
       this.node.setPosition(this._endPos);
+      this.onJumpEnd();
       return;
     }
 
@@ -60,6 +74,10 @@ export class PlayerController extends Component {
     this._isJumping = true;
     this._curJumpTime = 0;
     this._jumpSpeed = (this._jumpStep * step) / this._jumpTime;
-    console.log(this._jumpSpeed);
+
+    this._totalStep += step;
+  }
+  onJumpEnd() {
+    this.node.emit("jumpEnd", this._totalStep);
   }
 }
