@@ -6,6 +6,7 @@ import {
   Input,
   input,
   Node,
+  sys,
   Vec2,
   Vec3,
 } from "cc";
@@ -25,6 +26,10 @@ export class PlayerController extends Component {
 
   _totalStep = 0;
 
+  _touchingStartTime = 0;
+  _touching = false;
+  _moving = false;
+
   reset() {
     this._endPos.set(0, 0, 0);
     this._totalStep = 0;
@@ -33,13 +38,63 @@ export class PlayerController extends Component {
   start() {}
 
   setMouseActive(active: boolean) {
-    if (active) {
-      input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+    console.log(sys.isMobile);
+    if (sys.isMobile) {
+      if (active) {
+        input.on(Input.EventType.TOUCH_START, this.onTouchStart, this);
+        input.on(Input.EventType.TOUCH_MOVE, this.onTouchMove, this);
+        input.on(Input.EventType.TOUCH_END, this.onTouchEnd, this);
+      } else {
+      }
     } else {
-      input.off(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+      if (active) {
+        input.on(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+      } else {
+        input.off(Input.EventType.MOUSE_UP, this.onMouseUp, this);
+      }
     }
   }
+  onTouchStart() {
+    if (this._touching) return;
+    this._touching = true;
+    this._touchingStartTime = Date.now();
+  }
+  onTouchMove() {
+    this._moving = true;
+  }
+  onTouchEnd() {
+    const touchedTime = Date.now() - this._touchingStartTime;
+    if (this._touching && !this._moving) {
+      if (touchedTime <= 500) {
+        this.onTouchShort();
+      } else {
+        this.onTouchLong();
+      }
+    }
+    this._touching = false;
+    this._moving = false;
+  }
 
+  onTouchShort() {
+    this.jumpByStep(1);
+    this.BodyAnim.play("oneStep");
+  }
+  onTouchLong() {
+    this.jumpByStep(2);
+    this.BodyAnim.play("twoStep");
+  }
+  onMouseUp(event: EventMouse) {
+    if (this._isJumping) return;
+
+    if (event.getButton() === 0) {
+      this.jumpByStep(1);
+      this.BodyAnim.play("oneStep");
+    }
+    if (event.getButton() === 2) {
+      this.jumpByStep(2);
+      this.BodyAnim.play("twoStep");
+    }
+  }
   update(deltaTime: number) {
     this._curJumpTime += deltaTime;
 
@@ -53,18 +108,6 @@ export class PlayerController extends Component {
     const curPosition = this.node.getPosition(new Vec3());
     curPosition.x += this._jumpSpeed * deltaTime;
     this.node.setPosition(curPosition);
-  }
-  onMouseUp(event: EventMouse) {
-    if (this._isJumping) return;
-
-    if (event.getButton() === 0) {
-      this.jumpByStep(1);
-      this.BodyAnim.play("oneStep");
-    }
-    if (event.getButton() === 2) {
-      this.jumpByStep(2);
-      this.BodyAnim.play("twoStep");
-    }
   }
 
   jumpByStep(step: number) {
